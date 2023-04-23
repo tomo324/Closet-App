@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block body %}
+<a href="/create" role="button">Submit</a>
+{% for post in posts %}
+<div style="margin: auto;">
+    <div>
+        <h2>タイトル：{{ post.title }}</h2>
+        <a href="detail/{{ post.id }}" role="button">Detail</a>
+        <a href="update/{{ post.id }}" role="button">Update</a>
+        <a href="delete/{{ post.id }}" role="button">Delete</a>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
