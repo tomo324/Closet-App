@@ -6,8 +6,8 @@
     <div>
         <h2>{{ post.title }}</h2>
         <p>{{ post.detail }}</p>
-        <p>{{ post.filename }}</p>
-        <p>{{ post.image }}</p>
+        <p>{{ image.filename }}</p>
+        <img src="data:image/jpeg;base64,{{ restored_image }}" alt="{{ image.filename }}", style="width: 20%;">
 
         <a href="/index" role="button">Return</a>
         <a href="/update/{{ post.id }}" role="button">Update</a>
