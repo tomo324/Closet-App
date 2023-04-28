@@ -5,6 +5,9 @@
 <div style="margin: auto;">
     <div>
         <h2>タイトル：{{ post.title }}</h2>
+        <p> {{ filename_dict[post.id] }}</p>
+        <img src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}", style="width: 20%;">
+        <br>
         <a href="detail/{{ post.id }}" role="button">Detail</a>
         <a href="update/{{ post.id }}" role="button">Update</a>
         <a href="delete/{{ post.id }}" role="button">Delete</a>

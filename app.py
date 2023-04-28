@@ -33,10 +33,11 @@ class Image(db.Model):
 def index():
     if request.method == 'GET':
         posts = Post.query.all()
-        #images = Image.query.all()
-        # 画像データをbase64にエンコード
-        #restored_images = base64.b64encode(images.data).decode('utf-8')
-        return render_template('index.html', posts=posts)
+        images = Image.query.all()
+        filename_dict = {image.id: image.filename for image in images}
+        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
+        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
+        return render_template('index.html', posts=posts, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
