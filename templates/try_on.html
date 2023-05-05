@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block body %}
-<a href="/create" role="button">Submit</a>
-<a href="/try_on" role="button">Try-on</a>
+<h2 style="text-align: center;">Try-on</h2>
 <div style="margin: auto;">
     <style>
 
@@ -24,10 +23,6 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <img src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}", style="width: 200px;">
-                    <br>
-                    <a href="detail/{{ post.id }}" role="button">Detail</a>
-                    <a href="update/{{ post.id }}" role="button">Update</a>
-                    <a href="delete/{{ post.id }}" role="button">Delete</a>
                 </div>
             {% endfor %}
         </div>
@@ -40,14 +35,11 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <img src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}", style="width: 200px;">
-                    <br>
-                    <a href="detail/{{ post.id }}" role="button">Detail</a>
-                    <a href="update/{{ post.id }}" role="button">Update</a>
-                    <a href="delete/{{ post.id }}" role="button">Delete</a>
                 </div>
                 {% endfor %}
         </div>
     </div>
 </div>
+</form>
 
 {% endblock %}

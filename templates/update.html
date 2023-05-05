@@ -10,8 +10,22 @@
         <label for="detail">Detail</label>
         <input type="text" name="detail">
         <input type="file" name="file">
+        <select name="category">
+            <option value="tops">Tops</option>
+            <option value="bottoms">Bottoms</option>
+        </select><br>
         <a href="/index" rule="button">Return</a>
         <button type="submit">Update</button>
+    </div>
+    <p>-------------------------------------------------------------------------------</p>
+    <div style="margin: auto;">
+        <div>
+            <p>Title: {{ post.title }}</p>
+            <p>Detail: {{ post.detail }}</p>
+            <p>Category: {{ post.category }}</p>
+            <p>Filename: {{ image.filename }}</p>
+            <img src="data:image/jpeg;base64,{{ restored_image }}" alt="{{ image.filename }}", style="width: 20%;">
+        </div>
     </div>
 </form>
 {% endblock %}

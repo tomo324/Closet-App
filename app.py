@@ -21,6 +21,7 @@ class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(30), nullable=False)
     detail = db.Column(db.String(100))
+    category = db.Column(db.Enum('tops', 'bottoms'))
 
 
 class Image(db.Model):
@@ -29,15 +30,17 @@ class Image(db.Model):
     data = db.Column(db.LargeBinary)
 
 
+
 @app.route('/index', methods=['GET'])
 def index():
     if request.method == 'GET':
-        posts = Post.query.all()
+        tops = Post.query.filter_by(category='tops').all()
+        bottoms = Post.query.filter_by(category='bottoms').all()
         images = Image.query.all()
         filename_dict = {image.id: image.filename for image in images}
         # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
         restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
-        return render_template('index.html', posts=posts, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
+        return render_template('index.html', tops=tops, bottoms=bottoms, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
@@ -46,6 +49,7 @@ def create():
     else:
         title = request.form.get('title')
         detail = request.form.get('detail')
+        category = request.form.get('category')
 
         # ファイルがなかった場合の処理
         if 'file' not in request.files:
@@ -65,7 +69,7 @@ def create():
             file = request.files['file']
             data = file.read()
 
-            new_post = Post(title=title, detail=detail)
+            new_post = Post(title=title, detail=detail, category=category)
             db.session.add(new_post)
             db.session.commit()
 
@@ -87,11 +91,13 @@ def read(id):
 def update(id):
     post = Post.query.get(id)
     image = Image.query.get(id)
+    restored_image = base64.b64encode(image.data).decode('utf-8')
     if request.method == 'GET':
-        return render_template('update.html', post=post)
+        return render_template('update.html', post=post, image=image, restored_image=restored_image)
     else:
         post.title = request.form.get('title')
         post.detail = request.form.get('detail')
+        post.category = request.form.get('category')
 
         # ファイルがなかった場合の処理
         if 'file' not in request.files:
@@ -132,6 +138,17 @@ def allowed_file(filename):
     # OKなら1、だめなら0
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/try_on', methods=['GET', 'POST'])
+def try_on():
+    if request.method == 'GET':
+        tops = Post.query.filter_by(category='tops').all()
+        bottoms = Post.query.filter_by(category='bottoms').all()
+        images = Image.query.all()
+        filename_dict = {image.id: image.filename for image in images}
+        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
+        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
+        return render_template('try_on.html', tops=tops, bottoms=bottoms, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
