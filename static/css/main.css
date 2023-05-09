@@ -1,0 +1,40 @@
+.head-title {
+    text-align: center;
+}
+
+.container {
+    margin: auto;
+}
+
+.item-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.item {
+    width: 200px;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid black;
+}
+
+.clothes-images {
+    width: 200px;
+}
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+img {
+    max-width: 200px;
+    cursor: pointer;
+}
+
+.selected {
+    border: 2px solid red;
+}
+
+.display_area {
+    text-align: center;
+}

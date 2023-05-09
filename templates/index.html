@@ -1,33 +1,27 @@
 {% extends 'base.html' %}
+{% block head %}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}
+
 {% block body %}
 <a href="/create" role="button">Submit</a>
-<a href="/try_on" role="button">Try-on</a>
-<div style="margin: auto;">
-    <style>
-
-        .item-container {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .item {
-            width: 200px;
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid black;
-        }
-    </style>
+<h2 class="head-title">Index</h2>
+<div class="container">
     <div>
         <h2>Tops</h2>
         <div class="item-container">
             {% for post in tops %}
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
-                    <img src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}", style="width: 200px;">
-                    <br>
-                    <a href="detail/{{ post.id }}" role="button">Detail</a>
-                    <a href="update/{{ post.id }}" role="button">Update</a>
-                    <a href="delete/{{ post.id }}" role="button">Delete</a>
+                    <div id="tops">
+                        <img  class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}">
+                        <br>
+                        <a href="detail/{{ post.id }}" role="button">Detail</a>
+                        <a href="update/{{ post.id }}" role="button">Update</a>
+                        <a href="delete/{{ post.id }}" role="button">Delete</a>
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -39,15 +33,28 @@
             {% for post in bottoms %}
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
-                    <img src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}", style="width: 200px;">
-                    <br>
-                    <a href="detail/{{ post.id }}" role="button">Detail</a>
-                    <a href="update/{{ post.id }}" role="button">Update</a>
-                    <a href="delete/{{ post.id }}" role="button">Delete</a>
+                    <div id="bottoms">
+                        <img class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}">
+                        <br>
+                        <a href="detail/{{ post.id }}" role="button">Detail</a>
+                        <a href="update/{{ post.id }}" role="button">Update</a>
+                        <a href="delete/{{ post.id }}" role="button">Delete</a>
+                    </div>
                 </div>
-                {% endfor %}
+            {% endfor %}
         </div>
     </div>
+    <form action="#" method="post">
+        <br>
+        <div class="display_area">
+            <div id="tops_display_area">
+                <input type="hidden" name="tops_image" id="tops_image">
+            </div>
+            <div id="bottoms_display_area">
+                <input type="hidden" name="bottoms_image" id="bottoms_image">
+            </div>
+        </div>
+        <button type="submit">組み合わせを登録</button>
+    </form>
 </div>
-
 {% endblock %}

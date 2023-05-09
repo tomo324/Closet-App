@@ -31,7 +31,7 @@ class Image(db.Model):
 
 
 
-@app.route('/index', methods=['GET'])
+@app.route('/index', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
         tops = Post.query.filter_by(category='tops').all()
@@ -138,17 +138,6 @@ def allowed_file(filename):
     # OKなら1、だめなら0
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/try_on', methods=['GET', 'POST'])
-def try_on():
-    if request.method == 'GET':
-        tops = Post.query.filter_by(category='tops').all()
-        bottoms = Post.query.filter_by(category='bottoms').all()
-        images = Image.query.all()
-        filename_dict = {image.id: image.filename for image in images}
-        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
-        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
-        return render_template('try_on.html', tops=tops, bottoms=bottoms, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
-    
 
 if __name__ == "__main__":
     app.run(debug=True)
