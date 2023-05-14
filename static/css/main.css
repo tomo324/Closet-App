@@ -7,11 +7,12 @@
 }
 
 .item-container {
-    display: flex;
-    flex-wrap: wrap;
+    overflow-x: scroll;
+    white-space: nowrap;
 }
 
 .item {
+    display: inline-block;
     width: 200px;
     padding: 10px;
     margin: 10px;
@@ -36,5 +37,35 @@ img {
 }
 
 .display_area {
-    text-align: center;
+    margin-left: 10px;
+}
+
+#tops_display_area {
+    position: relative;
+    top: 10px;
+}
+
+.outfit-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.outfit {
+    display: flex;
+    flex-direction: column;
+    margin-right: 30px;
+}
+
+.outfit_images {
+    width: 200px;
+    height: auto;
+    display: block;
+}
+
+.outfit:last-child {
+    margin-right: 0;
+}
+
+.check-file {
+    color: red;
 }

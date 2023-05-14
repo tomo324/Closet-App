@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, send_file
+from flask import Flask, render_template, request, redirect, flash
 from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
@@ -29,6 +29,10 @@ class Image(db.Model):
     filename = db.Column(db.String(50))
     data = db.Column(db.LargeBinary)
 
+class OutfitImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tops_image_id = db.Column(db.Integer, nullable=False)
+    bottoms_image_id = db.Column(db.Integer, nullable=False)
 
 
 @app.route('/index', methods=['GET', 'POST'])
@@ -41,6 +45,13 @@ def index():
         # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
         restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
         return render_template('index.html', tops=tops, bottoms=bottoms, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
+    else:
+        tops_image_id = request.form.get('tops_image')
+        bottoms_image_id = request.form.get('bottoms_image')
+        new_outfit_image = OutfitImage(tops_image_id=tops_image_id, bottoms_image_id=bottoms_image_id)
+        db.session.add(new_outfit_image)
+        db.session.commit()
+        return redirect('/index')
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
@@ -61,7 +72,7 @@ def create():
         if file.filename == '':
             flash('ファイルがありません')
             return redirect(request.url)
-        # ファイルのチェック
+            # ファイルのチェック
         if file and allowed_file(file.filename):
             # 危険な文字を削除（サニタイズ処理）
             filename = secure_filename(file.filename)
@@ -76,8 +87,10 @@ def create():
             new_image = Image(filename=filename, data=data)
             db.session.add(new_image)
             db.session.commit()
-
             return redirect('/index')
+        else:
+            flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
+            return redirect(request.referrer)
 
 @app.route('/detail/<int:id>')
 def read(id):
@@ -116,9 +129,11 @@ def update(id):
             # ファイルの保存
             image.filename = filename
             image.data = file.read()
-
             db.session.commit()
             return redirect('/index')
+        else:
+            flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
+            return redirect(request.referrer)
 
 @app.route('/delete/<int:id>')
 def delete(id):
@@ -130,7 +145,6 @@ def delete(id):
 
     db.session.delete(image)
     db.session.commit()
-    
     return redirect('/index')
 
 def allowed_file(filename):
@@ -138,6 +152,22 @@ def allowed_file(filename):
     # OKなら1、だめなら0
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/outfit', methods=['GET'])
+def outfit():
+    if request.method == 'GET':
+        outfit_images = OutfitImage.query.all()
+        images = Image.query.all()
+        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
+        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
+        #保存したデータを表示する
+        return render_template('outfit.html', outfit_images=outfit_images, restored_images_dict=restored_images_dict)
+
+@app.route('/outfit/delete/<int:id>')
+def delete_outfit(id):
+    outfit_image = OutfitImage.query.get(id)
+    db.session.delete(outfit_image)
+    db.session.commit()
+    return redirect('/outfit')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -7,6 +7,7 @@
 
 {% block body %}
 <a href="/create" role="button">Submit</a>
+<a href="/outfit" role="button">登録されたコーディネートを見る</a>
 <h2 class="head-title">Index</h2>
 <div class="container">
     <div>
@@ -16,7 +17,7 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <div id="tops">
-                        <img  class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}">
+                        <img  class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ post.id }}">
                         <br>
                         <a href="detail/{{ post.id }}" role="button">Detail</a>
                         <a href="update/{{ post.id }}" role="button">Update</a>
@@ -34,7 +35,7 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <div id="bottoms">
-                        <img class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ filename_dict[post.id] }}">
+                        <img class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ post.id }}">
                         <br>
                         <a href="detail/{{ post.id }}" role="button">Detail</a>
                         <a href="update/{{ post.id }}" role="button">Update</a>
@@ -44,7 +45,7 @@
             {% endfor %}
         </div>
     </div>
-    <form action="#" method="post">
+    <form action="/index" method="post" enctype="multipart/form-data">
         <br>
         <div class="display_area">
             <div id="tops_display_area">
@@ -53,7 +54,7 @@
             <div id="bottoms_display_area">
                 <input type="hidden" name="bottoms_image" id="bottoms_image">
             </div>
-        </div>
+        </div><br>
         <button type="submit">組み合わせを登録</button>
     </form>
 </div>
