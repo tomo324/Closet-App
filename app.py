@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 import os
 from werkzeug.utils import secure_filename
-from io import BytesIO
 import base64
+import cv2
+import numpy as np
+import tempfile
 
 # アップロードされる拡張子の制限
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'gif'])
@@ -34,6 +36,32 @@ class OutfitImage(db.Model):
     tops_image_id = db.Column(db.Integer, nullable=False)
     bottoms_image_id = db.Column(db.Integer, nullable=False)
 
+def make_background_transparent(image_data):
+    #バイト型のデータに変換する
+    image_data = image_data.read()
+    # 画像データをデコードして読み込む
+    image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+    height, width = image.shape[:2]
+
+    # 画像をRGBA形式に変換する
+    rgba_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGBA)
+
+    # GrabCutアルゴリズムを使用して背景と前景を分離する
+    mask = np.zeros(image.shape[:2], np.uint8)
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+    rect = (1, 1, width-1, height-1)
+    cv2.grabCut(image, mask, rect, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_RECT)
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+    # マスクを適用して背景を透過させる
+    rgba_image[:, :, 3] = mask2 * 255
+
+    #pngフォーマットにエンコードしてからbase64にエンコードする
+    _, encoded_image = cv2.imencode('.png', rgba_image)
+    base64_image = base64.b64encode(encoded_image).decode('utf-8')
+    return base64_image
+
 
 @app.route('/index', methods=['GET', 'POST'])
 def index():
@@ -55,8 +83,9 @@ def index():
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
+    rgba_image = None
     if request.method == 'GET':
-        return render_template('create.html')
+        return render_template('create.html', rgba_image=rgba_image)
     else:
         title = request.form.get('title')
         detail = request.form.get('detail')
@@ -78,19 +107,54 @@ def create():
             filename = secure_filename(file.filename)
             # ファイルの保存
             file = request.files['file']
-            data = file.read()
 
-            new_post = Post(title=title, detail=detail, category=category)
-            db.session.add(new_post)
-            db.session.commit()
+            #ファイルの拡張子に基づいてmime_typeを決める
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            mime_type = 'png' if ext == 'png' else 'jpeg' if ext in ['jpg', 'jpeg'] else 'gif'
 
-            new_image = Image(filename=filename, data=data)
-            db.session.add(new_image)
-            db.session.commit()
-            return redirect('/index')
+            # 画像を透過する
+            rgba_image = make_background_transparent(file)
+
+            #透過済みの画像を一時フォルダに保存する
+            decoded_rgba = base64.b64decode(rgba_image)
+            temp_image_file = tempfile.NamedTemporaryFile(delete=False)
+            temp_image_file.write(decoded_rgba)
+            temp_image_file.close()
+
+            # 一時ファイルのパスをセッションに保存する
+            session['image_path'] = temp_image_file.name
+            session['filename'] = filename
+            session['title'] = title
+            session['detail'] = detail
+            session['category'] = category
+
+            return render_template('create.html', title=title, detail=detail, category=category, rgba_image=rgba_image, filename=filename, mime_type=mime_type)
         else:
             flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
             return redirect(request.referrer)
+
+@app.route('/save', methods=['GET'])
+def save():
+    #一時ファイルから画像データを読み込む
+    with open(session['image_path'], 'rb') as f:
+        rgba_image = f.read()
+    filename = session.get('filename')
+    title = session.get('title')
+    detail = session.get('detail')
+    category = session.get('category')
+
+    # 透過済みの画像をデータベースに保存する
+    new_post = Post(title=title, detail=detail, category=category)
+    db.session.add(new_post)
+    db.session.commit()
+
+    new_image = Image(filename=filename, data=rgba_image)
+    db.session.add(new_image)
+    db.session.commit()
+
+    # ホームページにリダイレクトする
+    return redirect(url_for('index'))
+
 
 @app.route('/detail/<int:id>')
 def read(id):

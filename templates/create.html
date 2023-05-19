@@ -34,4 +34,16 @@
         <button type="submit">Submit</button>
     </div>
 </form>
+
+{% if rgba_image is not none %}
+<p>-------------------------------------------------------------------------------</p>
+<ul>
+    <li>{{ title }}</li>
+    <li>{{ detail }}</li>
+    <li>{{ category }}</li>
+    <img  class="rgba-image" src="data:image/{{ mime_type }};base64,{{ rgba_image }}" alt="{{ filename }}">
+</ul>
+<a href="/save" role="button">Submit</a>
+{% endif %}
+
 {% endblock %}
