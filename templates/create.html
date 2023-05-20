@@ -45,7 +45,7 @@
 </ul>
 <a href="/save" role="button">Submit</a>
 
-<!-- 画像がクリックされたときに表示される要素 -->>
+<!-- トリミングする画像が表示される要素 -->>
 <div id="rgba-container"></div>
 <!-- トリミングを適用するボタン -->>
 <button id="apply-crop">Apply Crop</button>
@@ -55,7 +55,7 @@
     <button type="submit">Save</button>
 </form>
 {% endif %}
-<link href="{{ url_for('static', filename='css/croppie.css') }}" rel="stylesheet">
-<script src="{{ url_for('static', filename='js/croppie.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/cropper.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/cropper.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/image_cropping.js') }}"></script>
 {% endblock %}
