@@ -57,6 +57,9 @@ def make_background_transparent(image_data):
     # マスクを適用して背景を透過させる
     rgba_image[:, :, 3] = mask2 * 255
 
+    # RGBA画像をBGRAからRGBAに変換する
+    rgba_image = cv2.cvtColor(rgba_image, cv2.COLOR_BGRA2RGBA)
+
     #pngフォーマットにエンコードしてからbase64にエンコードする
     _, encoded_image = cv2.imencode('.png', rgba_image)
     base64_image = base64.b64encode(encoded_image).decode('utf-8')
@@ -133,27 +136,38 @@ def create():
             flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
             return redirect(request.referrer)
 
-@app.route('/save', methods=['GET'])
+@app.route('/save', methods=['GET', 'POST'])
 def save():
-    #一時ファイルから画像データを読み込む
-    with open(session['image_path'], 'rb') as f:
-        rgba_image = f.read()
-    filename = session.get('filename')
-    title = session.get('title')
-    detail = session.get('detail')
-    category = session.get('category')
+    if request.method == 'GET':
+        #一時ファイルから画像データを読み込む
+        with open(session['image_path'], 'rb') as f:
+            rgba_image = f.read()
+        filename = session.get('filename')
+        title = session.get('title')
+        detail = session.get('detail')
+        category = session.get('category')
 
-    # 透過済みの画像をデータベースに保存する
-    new_post = Post(title=title, detail=detail, category=category)
-    db.session.add(new_post)
-    db.session.commit()
+        # 透過済みの画像をデータベースに保存する
+        new_post = Post(title=title, detail=detail, category=category)
+        db.session.add(new_post)
+        db.session.commit()
 
-    new_image = Image(filename=filename, data=rgba_image)
-    db.session.add(new_image)
-    db.session.commit()
+        new_image = Image(filename=filename, data=rgba_image)
+        db.session.add(new_image)
+        db.session.commit()
 
-    # ホームページにリダイレクトする
-    return redirect(url_for('index'))
+        # ホームページにリダイレクトする
+        return redirect(url_for('index'))
+    else:
+        #透過済みの画像を一時フォルダに保存する
+        decoded_rgba = base64.b64decode(rgba_image)
+        temp_image_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_image_file.write(decoded_rgba)
+        temp_image_file.close()
+
+        # 一時ファイルのパスをセッションに保存する
+        session['image_path'] = temp_image_file.name
+        return redirect(url_for('save'))
 
 
 @app.route('/detail/<int:id>')

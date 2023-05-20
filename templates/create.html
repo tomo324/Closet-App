@@ -41,9 +41,21 @@
     <li>{{ title }}</li>
     <li>{{ detail }}</li>
     <li>{{ category }}</li>
-    <img  class="rgba-image" src="data:image/{{ mime_type }};base64,{{ rgba_image }}" alt="{{ filename }}">
+    <img  id="original-rgba" src="data:image/{{ mime_type }};base64,{{ rgba_image }}" alt="{{ filename }}">
 </ul>
 <a href="/save" role="button">Submit</a>
-{% endif %}
 
+<!-- 画像がクリックされたときに表示される要素 -->>
+<div id="rgba-container"></div>
+<!-- トリミングを適用するボタン -->>
+<button id="apply-crop">Apply Crop</button>
+
+<form id="crop-form" action="/save" method="POST">
+    <input type="hidden" id="crop-result" name="crop-result" value="">
+    <button type="submit">Save</button>
+</form>
+{% endif %}
+<link href="{{ url_for('static', filename='css/croppie.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/croppie.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/image_cropping.js') }}"></script>
 {% endblock %}
