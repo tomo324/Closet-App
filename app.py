@@ -28,7 +28,6 @@ class Post(db.Model):
 
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(50))
     data = db.Column(db.LargeBinary)
 
 class OutfitImage(db.Model):
@@ -37,8 +36,7 @@ class OutfitImage(db.Model):
     bottoms_image_id = db.Column(db.Integer, nullable=False)
 
 def make_background_transparent(image_data):
-    #バイト型のデータに変換する
-    image_data = image_data.read()
+
     # 画像データをデコードして読み込む
     image = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
     height, width = image.shape[:2]
@@ -72,10 +70,9 @@ def index():
         tops = Post.query.filter_by(category='tops').all()
         bottoms = Post.query.filter_by(category='bottoms').all()
         images = Image.query.all()
-        filename_dict = {image.id: image.filename for image in images}
         # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
         restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
-        return render_template('index.html', tops=tops, bottoms=bottoms, filename_dict=filename_dict, restored_images_dict=restored_images_dict)
+        return render_template('index.html', tops=tops, bottoms=bottoms, restored_images_dict=restored_images_dict)
     else:
         tops_image_id = request.form.get('tops_image')
         bottoms_image_id = request.form.get('bottoms_image')
@@ -86,91 +83,86 @@ def index():
 
 @app.route('/create', methods=['GET', 'POST'])
 def create():
-    rgba_image = None
+    cropped_image = None
     if request.method == 'GET':
-        return render_template('create.html', rgba_image=rgba_image)
+        return render_template('create.html', cropped_image=cropped_image)
     else:
         title = request.form.get('title')
         detail = request.form.get('detail')
         category = request.form.get('category')
 
-        # ファイルがなかった場合の処理
-        if 'file' not in request.files:
+        # クロップされた画像データを受け取る
+        cropped_image_base64 = request.form.get('crop-result') 
+        if not cropped_image_base64:
             flash('ファイルがありません')
             return redirect(request.url)
-        # データの取り出し
-        file = request.files['file']
-        # ファイル名がなかった時の処理
-        if file.filename == '':
-            flash('ファイルがありません')
-            return redirect(request.url)
-            # ファイルのチェック
-        if file and allowed_file(file.filename):
-            # 危険な文字を削除（サニタイズ処理）
-            filename = secure_filename(file.filename)
-            # ファイルの保存
-            file = request.files['file']
+        
+        # 'data:image/jpeg;base64,'の部分を取り除く
+        cropped_image_base64 = cropped_image_base64.replace("data:image/jpeg;base64,", "")
 
-            #ファイルの拡張子に基づいてmime_typeを決める
-            ext = file.filename.rsplit('.', 1)[1].lower()
-            mime_type = 'png' if ext == 'png' else 'jpeg' if ext in ['jpg', 'jpeg'] else 'gif'
+        # base64文字列からバイトデータに変換
+        cropped_image_data = base64.b64decode(cropped_image_base64)
 
-            # 画像を透過する
-            rgba_image = make_background_transparent(file)
+        # クロップされた画像データを一時ファイルに保存
+        temp_image_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_image_file.write(cropped_image_data)
+        temp_image_file.close()
 
-            #透過済みの画像を一時フォルダに保存する
-            decoded_rgba = base64.b64decode(rgba_image)
-            temp_image_file = tempfile.NamedTemporaryFile(delete=False)
-            temp_image_file.write(decoded_rgba)
-            temp_image_file.close()
+        # 一時ファイルのパスをセッションに保存
+        session['image_path'] = temp_image_file.name
+        session['title'] = title
+        session['detail'] = detail
+        session['category'] = category
 
-            # 一時ファイルのパスをセッションに保存する
-            session['image_path'] = temp_image_file.name
-            session['filename'] = filename
-            session['title'] = title
-            session['detail'] = detail
-            session['category'] = category
+        return render_template('create.html', title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
 
-            return render_template('create.html', title=title, detail=detail, category=category, rgba_image=rgba_image, filename=filename, mime_type=mime_type)
-        else:
-            flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
-            return redirect(request.referrer)
 
 @app.route('/save', methods=['GET', 'POST'])
 def save():
     if request.method == 'GET':
         #一時ファイルから画像データを読み込む
         with open(session['image_path'], 'rb') as f:
-            rgba_image = f.read()
-        filename = session.get('filename')
+            cropped_image = f.read()
         title = session.get('title')
         detail = session.get('detail')
         category = session.get('category')
 
-        # 透過済みの画像をデータベースに保存する
+        # 画像を透過する
+        rgba_image = make_background_transparent(cropped_image)
+        rgba_image_bytes = base64.b64decode(rgba_image)
+
         new_post = Post(title=title, detail=detail, category=category)
         db.session.add(new_post)
         db.session.commit()
 
-        new_image = Image(filename=filename, data=rgba_image)
+        # 透過済みの画像をデータベースに保存する
+        new_image = Image(data=rgba_image_bytes)
         db.session.add(new_image)
         db.session.commit()
 
         # ホームページにリダイレクトする
         return redirect(url_for('index'))
     else:
-        rgba_image = request.form.get('crop-result')
-        # 'data:image/jpeg;base64,'の部分を取り除く
-        rgba_image = rgba_image.replace("data:image/jpeg;base64,", "")
-        #透過済みの画像を一時フォルダに保存する
-        decoded_rgba = base64.b64decode(rgba_image)
-        temp_image_file = tempfile.NamedTemporaryFile(delete=False)
-        temp_image_file.write(decoded_rgba)
-        temp_image_file.close()
+        cropped_image = request.form.get('image-src-input')
+        title = session.get('title')
+        detail = session.get('detail')
+        category = session.get('category')
 
-        # 一時ファイルのパスをセッションに保存する
-        session['image_path'] = temp_image_file.name
-        return redirect(url_for('save'))
+        # 'data:image/jpeg;base64,'の部分を取り除く
+        cropped_image = cropped_image.replace("data:image/jpeg;base64,", "")
+        # トリミング済みの画像をデコードする
+        decoded_cropped = base64.b64decode(cropped_image)
+
+        new_post = Post(title=title, detail=detail, category=category)
+        db.session.add(new_post)
+        db.session.commit()
+
+        # トリミング済みの画像をデータベースに保存する
+        new_image = Image(data=decoded_cropped)
+        db.session.add(new_image)
+        db.session.commit()
+
+        return redirect(url_for('index'))
 
 
 @app.route('/detail/<int:id>')
@@ -186,35 +178,75 @@ def update(id):
     post = Post.query.get(id)
     image = Image.query.get(id)
     restored_image = base64.b64encode(image.data).decode('utf-8')
+    cropped_image = None
     if request.method == 'GET':
-        return render_template('update.html', post=post, image=image, restored_image=restored_image)
+        return render_template('update.html', post=post, image=image, restored_image=restored_image, cropped_image=cropped_image)
     else:
-        post.title = request.form.get('title')
-        post.detail = request.form.get('detail')
-        post.category = request.form.get('category')
+        title = request.form.get('title')
+        detail = request.form.get('detail')
+        category = request.form.get('category')
 
-        # ファイルがなかった場合の処理
-        if 'file' not in request.files:
+        # クロップされた画像データを受け取る
+        cropped_image_base64 = request.form.get('crop-result') 
+        if not cropped_image_base64:
             flash('ファイルがありません')
             return redirect(request.url)
-        # データの取り出し
-        file = request.files['file']
-        # ファイル名がなかった時の処理
-        if file.filename == '':
-            flash('ファイルがありません')
-            return redirect(request.url)
-        # ファイルのチェック
-        if file and allowed_file(file.filename):
-            # 危険な文字を削除（サニタイズ処理）
-            filename = secure_filename(file.filename)
-            # ファイルの保存
-            image.filename = filename
-            image.data = file.read()
-            db.session.commit()
-            return redirect('/index')
-        else:
-            flash('ファイルの拡張子がpng, jpg, gifのいずれかであることを確認してください\n  Only png, jpg, and gif are allowed')
-            return redirect(request.referrer)
+        
+        # 'data:image/jpeg;base64,'の部分を取り除く
+        cropped_image_base64 = cropped_image_base64.replace("data:image/jpeg;base64,", "")
+
+        # base64文字列からバイトデータに変換
+        cropped_image_data = base64.b64decode(cropped_image_base64)
+
+        # クロップされた画像データを一時ファイルに保存
+        temp_image_file = tempfile.NamedTemporaryFile(delete=False)
+        temp_image_file.write(cropped_image_data)
+        temp_image_file.close()
+
+        # 一時ファイルのパスをセッションに保存
+        session['image_path'] = temp_image_file.name
+        session['title'] = title
+        session['detail'] = detail
+        session['category'] = category
+
+        return render_template('update.html', post=post, image=image, restored_image=restored_image, title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
+    
+@app.route('/save_update/<int:id>', methods=['GET', 'POST'])
+def save_update(id):
+    post = Post.query.get(id)
+    image = Image.query.get(id)
+    if request.method == 'GET':
+        #一時ファイルから画像データを読み込む
+        with open(session['image_path'], 'rb') as f:
+            cropped_image = f.read()
+        post.title = session.get('title')
+        post.detail = session.get('detail')
+        post.category = session.get('category')
+
+        # 画像を透過する
+        rgba_image = make_background_transparent(cropped_image)
+        rgba_image_bytes = base64.b64decode(rgba_image)
+
+        image.data = rgba_image_bytes
+        db.session.commit()
+
+        # トップページにリダイレクトする
+        return redirect(url_for('index'))
+    else:
+        cropped_image = request.form.get('image-src-input')
+        post.title = session.get('title')
+        post.detail = session.get('detail')
+        post.category = session.get('category')
+
+        # 'data:image/jpeg;base64,'の部分を取り除く
+        cropped_image = cropped_image.replace("data:image/jpeg;base64,", "")
+        # トリミング済みの画像をデコードする
+        decoded_cropped = base64.b64decode(cropped_image)
+
+        image.data = decoded_cropped
+        db.session.commit()
+        return redirect(url_for('index'))
+
 
 @app.route('/delete/<int:id>')
 def delete(id):
@@ -227,11 +259,6 @@ def delete(id):
     db.session.delete(image)
     db.session.commit()
     return redirect('/index')
-
-def allowed_file(filename):
-    # .があるかどうかのチェックと拡張子の確認
-    # OKなら1、だめなら0
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/outfit', methods=['GET'])
 def outfit():
