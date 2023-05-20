@@ -160,7 +160,6 @@ def save():
         return redirect(url_for('index'))
     else:
         rgba_image = request.form.get('crop-result')
-        rgba_image = make_background_transparent(rgba_image)
         # 'data:image/jpeg;base64,'の部分を取り除く
         rgba_image = rgba_image.replace("data:image/jpeg;base64,", "")
         #透過済みの画像を一時フォルダに保存する
