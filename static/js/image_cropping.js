@@ -6,7 +6,7 @@ window.onload = function() {
     let cropper;
 
     // ファイルが選択された際のイベント
-    document.getElementById('file-input').addEventListener('change', function(e) {
+    document.getElementById('file-input').addEventListener('change', function() {
         const reader = new FileReader();
         
         reader.onload = function(e) {

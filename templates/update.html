@@ -11,7 +11,7 @@
     {% if messages %}
         <ul class="update-flashes">
             {% for message in messages %}
-                <li class="check-file">{{ message }}</li>
+                <li class="check">{{ message }}</li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -37,7 +37,7 @@
         <!-- クロップされた画像のbase64エンコードデータを保持する隠しフィールド -->
         <input type="hidden" id="crop-result" name="crop-result" value="">
     </div>
-    <button id="apply-crop" type="submit">Save</button>
+    <button id="apply-crop" type="submit">トリミング</button>
 </form>
 <a href="/index" rule="button">Return</a>
 
@@ -54,7 +54,7 @@
     <button type="submit">そのままアップデートする</button>
 </form>
 
-<a href="/save_update/{{ post.id }}" role="button">画像を透過してアップデート</a>
+<a href="/save_update/{{ post.id }}" role="button">画像を透過してアップデート(10秒ほどかかります)</a>
 
 {% endif %}
 

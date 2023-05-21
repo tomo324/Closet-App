@@ -8,6 +8,8 @@
 {% block body %}
 <a href="/create" role="button">Submit</a>
 <a href="/outfit" role="button">登録されたコーディネートを見る</a>
+<a class="btn-logout" href="/logout" role="button">LOGOUT</a>
+<h5 class="index-username">ユーザー名: {{ username }} </h5>
 <h2 class="head-title">Closet</h2>
 <div class="container">
     <div>
@@ -45,7 +47,7 @@
             {% endfor %}
         </div>
     </div>
-    <form action="/index" method="post" enctype="multipart/form-data">
+    <form action="/outfit" method="post" enctype="multipart/form-data">
         <br>
         <div class="display_area">
             <div id="tops_display_area">
@@ -55,6 +57,15 @@
                 <input type="hidden" name="bottoms_image" id="bottoms_image">
             </div>
         </div><br>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="create-flashes">
+                    {% for message in messages %}
+                        <li class="check">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
         <button type="submit">組み合わせを登録</button>
     </form>
 </div>
