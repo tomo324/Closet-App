@@ -7,6 +7,8 @@
 
 {% block body %}
 
+<a class="btn-return" href="/index" role="button">Return</a>
+
 {% with messages = get_flashed_messages() %}
     {% if messages %}
         <ul class="update-flashes">
@@ -25,7 +27,6 @@
     <div>
         <label for="detail">Detail</label>
         <input type="text" name="detail">
-        <!-- 元となるファイルの入力 -->
         <input type="file" id="file-input">
         <select name="category">
             <option value="tops">Tops</option>
@@ -34,12 +35,11 @@
     </div>
     <!-- トリミングする画像が表示される要素 -->
     <div id="cropped-container">
-        <!-- クロップされた画像のbase64エンコードデータを保持する隠しフィールド -->
+        <!-- トリミングされた画像のbase64エンコードデータを保持する隠しフィールド -->
         <input type="hidden" id="crop-result" name="crop-result" value="">
     </div>
     <button id="apply-crop" type="submit">トリミング</button>
 </form>
-<a href="/index" rule="button">Return</a>
 
 {% if cropped_image is not none %}
 <p>-------------------------------------------------------------------------------</p>
@@ -51,14 +51,15 @@
 </ul>
 <form id="submit-image-form" action="/save_update/{{ post.id }}" method="POST">
     <input id="image-src-input" type="hidden" name="image-src-input", value="">
-    <button type="submit">そのままアップデートする</button>
+    <button class="submit-cropped" type="submit">そのままアップデートする</button>
 </form>
 
-<a href="/save_update/{{ post.id }}" role="button">画像を透過してアップデート(10秒ほどかかります)</a>
+<a href="/save_update/{{ post.id }}" class="submit-rgba" role="button">画像を透過してアップデート(10秒ほどかかります)</a>
 
 {% endif %}
 
 <p>-------------------------------------------------------------------------------</p>
+<div style="margin-left: 10px;">修正前の内容</div>
 <div style="margin: auto;">
     <div>
         <p>Title: {{ post.title }}</p>

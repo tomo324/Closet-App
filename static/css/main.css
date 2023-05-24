@@ -57,7 +57,8 @@ img {
 }
 
 .outfit_images {
-    width: 200px;
+    display: inline-block;
+    width: 100px;
     height: auto;
     display: block;
 }
@@ -68,4 +69,352 @@ img {
 
 .check {
     color: red;
+}
+
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: 100%;
+    background-color: rgba(28, 28, 28, 0.8);
+    padding: 20px 0;
+    box-shadow: 0 2px 4px 0 rgba(235, 16, 16, 0.2);
+}
+
+body {
+    padding-top: 100px;
+}
+
+.navbar {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.navbar-login {
+    color: #fff;
+    text-decoration: none;
+    font-size: 2rem;
+    padding: 12px 24px;
+    border: 1px solid transparent;
+    transition: all 0.1s ease;
+    border-radius: 4px;
+    background-color: transparent;
+}
+
+.navbar-login:hover {
+    color: #1c1c1c;
+    background-color: transparent;
+}
+
+
+.signup-button, .login-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #000;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    margin-top: 40px;
+    margin-left: 20px;
+}
+
+.signup-button:hover, .login-button:hover {
+    background-color: #333;
+    cursor: pointer;
+}
+
+.create-button, .outfit-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #000;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    margin-top: 40px;
+    margin-left: 20px;
+}
+
+.create-button:hover, .outfit-button:hover {
+    background-color: #333;
+    cursor: pointer;
+}
+
+.btn-logout {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #FFA500; /* ボタンの色はオレンジ */
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+
+    /* ボタンの位置を画面の右側に配置 */
+    position: absolute;
+    right: 50px;
+}
+
+.btn-logout:hover {
+    background-color: #ff8000;
+    cursor: pointer;
+}
+
+
+
+.btn-detail {
+    display: inline-block;
+    padding: 5px 8px;
+    margin-top: 5px;
+    background-color: rgb(37, 36, 36);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px; /* 各ボタン間のスペース */
+}
+
+.btn-detail:hover {
+    background-color: #4d4b4b;
+    cursor: pointer;
+}
+
+.btn-update {
+    display: inline-block;
+    padding: 5px 8px;
+    margin-top: 5px;
+    background-color:  rgb(245, 185, 3);
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px; /* 各ボタン間のスペース */
+}
+
+.btn-update:hover {
+    background-color: rgb(255, 140, 3);
+    cursor: pointer;
+}
+
+.btn-delete {
+    display: inline-block;
+    padding: 5px 8px;
+    margin-top: 5px;
+    background-color: #b34d4d;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+}
+
+.btn-delete:hover {
+    background-color: #990000;
+    cursor: pointer;
+}
+
+.submit-outfit {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #2c7141;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 20px;
+    /* 影を追加して立体感を出す */
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.3);
+}
+
+.submit-outfit:hover {
+    background-color: #1c4b29;
+}
+
+.submit-outfit:active {
+    /* ボタンが押されている間は影を小さくしてボタンが押されているように見せる */
+    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.btn-return {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #357235;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px;
+}
+
+.btn-return:hover {
+    background-color: #3d5228;
+}
+
+.outfit-delete {
+    display: inline-block;
+    padding: 5px 8px;
+    margin: 5px;
+    background-color: #b34d4d;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    align-self: flex-start;
+}
+
+.outfit-delete:hover {
+    background-color: #990000;
+    cursor: pointer;
+}
+
+.detail-update {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: rgb(239, 160, 14);
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 15px;
+}
+
+.detail-update:hover {
+    background-color: #f57106;
+}
+
+.detail-content {
+    text-align: center;
+}
+
+.detail-image {
+    width: 20%;
+    margin-left: 130px;
+}
+
+
+div {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="text"], input[type="file"], input[type="password"], select {
+    display: block;
+    width: 98%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color:  #fff;
+    color: #000;
+    border: 1px solid #969393; 
+    border-radius: 5px;
+}
+
+input[type="text"]::placeholder, input[type="file"]::placeholder , input[type="password"]::placeholder {
+    color: #888;
+}
+
+select {
+    appearance: none;
+}
+
+#apply-crop {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #808080;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#apply-crop:hover {
+    background-color: #666;
+}
+
+.login-submit {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #008000;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-submit:hover {
+    background-color: #006600;
+}
+
+.submit-cropped {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #008000;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-cropped:hover {
+    background-color: #006600;
+}
+
+.submit-rgba {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 20px;
+    background-color: #03a58d;
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.submit-rgba:hover {
+    background-color: #0d9e64;
+}
+
+.index-username {
+    text-align: right; /* テキストを右に寄せる */
+    margin-right: 30px;
 }

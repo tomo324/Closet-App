@@ -7,12 +7,12 @@
     <title>ClosetApp</title>
 </head>
 <body>
-    <nav class="login-container">
-        <div class="container-fluid">
-            <a class="navbar-login" href="/" style="font-size: 2rem">Closet-App ログイン</a>
-        </div>
-    </nav>
-<h1 style="margin-left: 30px;">ユーザー登録</h1>
+    <header class="header">
+        <nav class="navbar">
+            <a class="navbar-login" href="/">Closet-App Login</a>
+        </nav>
+    </header>
+<h1 style="margin-left: 30px;">SIGNUP</h1>
 
 {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -29,7 +29,7 @@
     <input type="text" name="username">
     <label for="">パスワード</label>
     <input type="password" name="password">
-    <input type="submit" value="新規登録">
+    <input class="login-submit" type="submit" value="SIGNUP">
 </form>
 </body>
 </html>

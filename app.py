@@ -70,7 +70,7 @@ def make_background_transparent(image_data):
     # マスクを適用して背景を透過させる
     rgba_image[:, :, 3] = mask2 * 255
 
-    # RGBA画像をBGRAからRGBAに変換する
+    # 画像をBGRAからRGBAに変換する
     rgba_image = cv2.cvtColor(rgba_image, cv2.COLOR_BGRA2RGBA)
 
     #pngフォーマットにエンコードしてからbase64にエンコードする
@@ -208,7 +208,7 @@ def update(id):
         detail = request.form.get('detail')
         category = request.form.get('category')
 
-        # クロップされた画像データを受け取る
+        # トリミングされた画像データを受け取る
         cropped_image_base64 = request.form.get('crop-result')
         if not cropped_image_base64:
             flash('ファイルがありません')
@@ -220,7 +220,7 @@ def update(id):
         # base64文字列からバイトデータに変換
         cropped_image_data = base64.b64decode(cropped_image_base64)
 
-        # クロップされた画像データを一時ファイルに保存
+        # トリミングされた画像データを一時ファイルに保存
         temp_image_file = tempfile.NamedTemporaryFile(delete=False)
         temp_image_file.write(cropped_image_data)
         temp_image_file.close()
@@ -312,7 +312,8 @@ def outfit():
             db.session.commit()
             return redirect('/index')
         else:
-            flash('トップスとボトムスの画像をセットしてください')
+            flash('コーデを保存するためにトップスとボトムスの画像をクリックしてください')
+            flash('Click on the tops and bottoms images to save the outfit')
             return redirect('/index')
 
 @app.route('/outfit/delete/<int:id>')
@@ -378,6 +379,5 @@ def logout():
     return redirect('/')
 
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

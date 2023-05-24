@@ -1,19 +1,32 @@
-{% extends 'base.html' %}
-{% block head %}
-<meta charset="UTF-8">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block body %}
-<a href="/create" role="button">Submit</a>
-<a href="/outfit" role="button">登録されたコーディネートを見る</a>
-<a class="btn-logout" href="/logout" role="button">LOGOUT</a>
-<h5 class="index-username">ユーザー名: {{ username }} </h5>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+
+<body>
+
+<header class="header">
+    <nav class="navbar">
+        <a class="navbar-login" href="/index">Closet-App</a>
+        <a class="btn-logout" href="/logout" role="button">LOGOUT</a>
+    </nav>
+</header>
+
+<a class="create-button" href="/create" role="button">Submit</a>
+<a class="outfit-button" href="/outfit" role="button">Outfit</a>
+<p class="index-username">username: {{ username }} </p>
+
 <h2 class="head-title">Closet</h2>
 <div class="container">
     <div>
-        <h2>Tops</h2>
+        <h2 style="margin-left: 20px;">Tops</h2>
         <div class="item-container">
             {% for post in tops %}
                 <div class="item">
@@ -21,9 +34,9 @@
                     <div id="tops">
                         <img  class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ post.id }}">
                         <br>
-                        <a href="detail/{{ post.id }}" role="button">Detail</a>
-                        <a href="update/{{ post.id }}" role="button">Update</a>
-                        <a href="delete/{{ post.id }}" role="button">Delete</a>
+                        <a class="btn-detail" href="detail/{{ post.id }}" role="button">Detail</a>
+                        <a class="btn-update" href="update/{{ post.id }}" role="button">Update</a>
+                        <a class="btn-delete" href="delete/{{ post.id }}" role="button">Delete</a>
                     </div>
                 </div>
             {% endfor %}
@@ -31,7 +44,7 @@
     </div>
 
     <div>
-        <h2>Bottoms</h2>
+        <h2 style="margin-left: 20px;">Bottoms</h2>
         <div class="item-container">
             {% for post in bottoms %}
                 <div class="item">
@@ -39,9 +52,9 @@
                     <div id="bottoms">
                         <img class="clothes-images" src="data:image/jpeg;base64,{{ restored_images_dict[post.id] }}" alt="{{ post.id }}">
                         <br>
-                        <a href="detail/{{ post.id }}" role="button">Detail</a>
-                        <a href="update/{{ post.id }}" role="button">Update</a>
-                        <a href="delete/{{ post.id }}" role="button">Delete</a>
+                        <a class="btn-detail" href="detail/{{ post.id }}" role="button">Detail</a>
+                        <a class="btn-update" href="update/{{ post.id }}" role="button">Update</a>
+                        <a class="btn-delete" href="delete/{{ post.id }}" role="button">Delete</a>
                     </div>
                 </div>
             {% endfor %}
@@ -66,7 +79,8 @@
                 </ul>
             {% endif %}
         {% endwith %}
-        <button type="submit">組み合わせを登録</button>
+        <button class="submit-outfit" type="submit">コーデを登録</button>
     </form>
 </div>
-{% endblock %}
+</body>
+</html>

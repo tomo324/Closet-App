@@ -1,16 +1,22 @@
 {% extends 'base.html' %}
 
+{% block head %}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+{% endblock %}
+
 {% block body %}
-<h2 style="text-align: center;">Detail</h2>
+<a class="btn-return" href="/index" role="button">Return</a>
+<h1 style="text-align: center;">Detail</h1><br>
 <div style="margin: auto;">
-    <div>
-        <h2>{{ post.title }}</h2>
+    <div class="detail-content">
+        <h2>Title: {{ post.title }}</h2>
         <p>{{ post.detail }}</p>
         <p>Category: {{ post.category }}</p>
-        <img src="data:image/jpeg;base64,{{ restored_image }}" alt="{{ post.category }} data", style="width: 20%;">
-
-        <a href="/index" role="button">Return</a>
-        <a href="/update/{{ post.id }}" role="button">Update</a>
+        <div class="image-button-container">
+            <img class="detail-image" src="data:image/jpeg;base64,{{ restored_image }}" alt="{{ post.category }} data">
+            <a class="detail-update" href="/update/{{ post.id }}" role="button">Update</a>
+        </div>
     </div>
 </div>
 {% endblock %}

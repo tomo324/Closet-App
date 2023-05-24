@@ -35,7 +35,6 @@ window.onload = function() {
             let canvas = cropper.getCroppedCanvas();
             let base64 = canvas.toDataURL('image/jpeg');
             document.getElementById('crop-result').value = base64;
-            console.log("apply-crop was clicked!")
         }
     });
 };
