@@ -365,18 +365,30 @@ def login():
     else:
         username = request.form.get('username')
         password = request.form.get('password')
+
         try:
             # Userテーブルからusernameに一致するユーザーを取得
             user = User.query.filter_by(username=username).first()
-            if check_password_hash(user.password, password):
-                login_user(user)
-                return redirect('/index')
-            else:
-                flash('Incorrect username or password')
+    
+            # usernameに一致するユーザーが存在しない場合
+            if user is None:
+                flash('User does not exist')
                 return redirect(request.url)
-        except:
-                flash('Incorrect username or password')
+
+            # 提供されたパスワードがハッシュ化されたパスワードと一致するかチェック
+            if not check_password_hash(user.password, password):
+                flash('Incorrect password')
                 return redirect(request.url)
+    
+            # ユーザーが正常に認証された場合
+            login_user(user)
+            return redirect('/index')
+        except Exception as e:
+            # 未知のエラーが発生した場合
+            flash('An unexpected error occurred: {}'.format(str(e)))
+            return redirect(request.url)
+
+
 
 @app.route('/', methods=['GET'])
 def top():
