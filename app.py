@@ -8,6 +8,8 @@ import base64
 import cv2
 import numpy as np
 import tempfile
+from flask_migrate import Migrate
+
 
 # アップロードされる拡張子の制限
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'gif'])
@@ -28,6 +30,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SECRET_KEY'] = os.urandom(24)
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # LoginManagerをインスタンス化
 login_manager = LoginManager()
@@ -37,7 +40,7 @@ login_manager.init_app(app)
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
-    password = db.Column(db.String(25))
+    password = db.Column(db.String(100))
 
 @login_manager.user_loader
 def load_user(user_id):
