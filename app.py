@@ -1,14 +1,13 @@
+import os,cv2, tempfile, uuid, requests, base64
 from flask import Flask, render_template, request, redirect, flash, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-import os
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-import base64
-import cv2
 import numpy as np
-import tempfile
 from flask_migrate import Migrate
+from google.cloud import storage
+from settings import GCS_BUCKET_NAME, SQLALCHEMY_DATABASE_URI
 
 
 # アップロードされる拡張子の制限
@@ -17,12 +16,6 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'gif'])
 app = Flask(__name__)
 app.config["DEBUG"] = False
 
-SQLALCHEMY_DATABASE_URI = "mysql+mysqlconnector://{username}:{password}@{hostname}/{databasename}".format(
-    username="tomo324",
-    password="db5555tomo",
-    hostname="tomo324.mysql.pythonanywhere-services.com",
-    databasename="tomo324$closet",
-)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
@@ -52,18 +45,30 @@ class Post(db.Model):
     detail = db.Column(db.String(100))
     category = db.Column(db.Enum('tops', 'bottoms'))
     user_id = db.Column(db.Integer, nullable=False)
+    image_id = db.Column(db.Integer, db.ForeignKey('image.id')) # Imageモデルとの関連性を定義
 
 
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    data = db.Column(db.LargeBinary)
+    object_name = db.Column(db.String(256), nullable=False)  # GCSのオブジェクト名
+    public_url = db.Column(db.String(256), nullable=False)  # Google Cloud Storageの公開URL
     user_id = db.Column(db.Integer, nullable=False)
+    post = db.relationship('Post', backref='image', uselist=False) # Postとの逆参照を定義
+
 
 class OutfitImage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tops_image_id = db.Column(db.Integer, nullable=False)
     bottoms_image_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, nullable=False)
+
+# サービスアカウントのjsonファイルのパス
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "closet-app-388006-79ea106aacf3.json"
+
+# Google Cloud Storageクライアントのインスタンス化
+gcs = storage.Client()
+
+
 
 def make_background_transparent(image_data):
     # 画像データをデコードして読み込む
@@ -103,10 +108,10 @@ def index():
         tops = Post.query.filter_by(user_id=user.id).filter_by(category='tops').all()
         bottoms = Post.query.filter_by(user_id=user.id).filter_by(category='bottoms').all()
         images = Image.query.filter_by(user_id=user.id).all()
-        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
-        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
-        return render_template('index.html', tops=tops, bottoms=bottoms, restored_images_dict=restored_images_dict, username=username)
+        # image.idをキー、エンコードされた画像データをバリューとする辞書を作成
+        encoded_images_dict = {image.id: base64.b64encode(requests.get(image.public_url).content).decode('utf-8') for image in images}
 
+        return render_template('index.html', encoded_images_dict=encoded_images_dict, tops=tops, bottoms=bottoms, username=username)
 
 @app.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -163,14 +168,29 @@ def save():
         rgba_image = make_background_transparent(cropped_image)
         rgba_image_bytes = base64.b64decode(rgba_image)
 
-        new_post = Post(title=title, detail=detail, category=category, user_id=user_id)
+        # UUIDを生成
+        filename = str(uuid.uuid4())
+        
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        blob.upload_from_string(rgba_image_bytes)
+
+        # 古い画像の表示を防ぐためにキャッシュを無効にする。
+        blob.cache_control = "no-cache, max-age=0"
+        blob.update()
+
+        blob.make_public()
+
+        # 透過済みの画像をデータベースに保存する
+        new_image = Image(object_name=filename, public_url=blob.public_url, user_id=user_id)
+        db.session.add(new_image)
+        db.session.commit()
+
+        new_post = Post(title=title, detail=detail, category=category, user_id=user_id, image_id=new_image.id)
         db.session.add(new_post)
         db.session.commit()
 
-        # 透過済みの画像をデータベースに保存する
-        new_image = Image(data=rgba_image_bytes, user_id=user_id)
-        db.session.add(new_image)
-        db.session.commit()
 
         # ホームページにリダイレクトする
         return redirect(url_for('index'))
@@ -182,18 +202,30 @@ def save():
         category = session.get('category')
         user_id = current_user.id
 
-        # 'data:image/jpeg;base64,'の部分を取り除く
-        cropped_image = cropped_image.replace("data:image/jpeg;base64,", "")
-        # トリミング済みの画像をデコードする
-        decoded_cropped = base64.b64decode(cropped_image)
+        # データ部分だけを取り出してデコードする
+        image_data = base64.b64decode(cropped_image.split(',')[1])
 
-        new_post = Post(title=title, detail=detail, category=category, user_id=user_id)
-        db.session.add(new_post)
+        # UUIDを生成
+        filename = str(uuid.uuid4())
+        
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        blob.upload_from_string(image_data)
+
+        # 古い画像の表示を防ぐためにキャッシュを無効にする。
+        blob.cache_control = "no-cache, max-age=0"
+        blob.update()
+
+        blob.make_public()
+
+        # 透過済みの画像をデータベースに保存する
+        new_image = Image(object_name=filename, public_url=blob.public_url, user_id=user_id)
+        db.session.add(new_image)
         db.session.commit()
 
-        # トリミング済みの画像をデータベースに保存する
-        new_image = Image(data=decoded_cropped, user_id=user_id)
-        db.session.add(new_image)
+        new_post = Post(title=title, detail=detail, category=category, user_id=user_id, image_id=new_image.id)
+        db.session.add(new_post)
         db.session.commit()
 
         return redirect(url_for('index'))
@@ -203,17 +235,16 @@ def save():
 @login_required
 def read(id):
     post =Post.query.get(id)
-    image = Image.query.get(id)
-    # 画像データをbase64にエンコード
-    restored_image = base64.b64encode(image.data).decode('utf-8')
+    image = post.image
+    restored_image = base64.b64encode(requests.get(image.public_url).content).decode('utf-8')
     return render_template('detail.html', post=post, image=image, restored_image=restored_image)
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 @login_required
 def update(id):
     post = Post.query.get(id)
-    image = Image.query.get(id)
-    restored_image = base64.b64encode(image.data).decode('utf-8')
+    image = post.image
+    restored_image = base64.b64encode(requests.get(image.public_url).content).decode('utf-8')
     cropped_image = None
     if request.method == 'GET':
         return render_template('update.html', post=post, image=image, restored_image=restored_image, cropped_image=cropped_image)
@@ -251,7 +282,7 @@ def update(id):
 @login_required
 def save_update(id):
     post = Post.query.get(id)
-    image = Image.query.get(id)
+    image = post.image
     if request.method == 'GET':
         #一時ファイルから画像データを読み込む
         with open(session['image_path'], 'rb') as f:
@@ -264,7 +295,19 @@ def save_update(id):
         rgba_image = make_background_transparent(cropped_image)
         rgba_image_bytes = base64.b64decode(rgba_image)
 
-        image.data = rgba_image_bytes
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(image.object_name)
+        blob.upload_from_string(rgba_image_bytes)
+
+        # 古い画像の表示を防ぐためにキャッシュを無効にする。
+        blob.cache_control = "no-cache, max-age=0"
+        blob.update()
+
+        blob.make_public()
+
+        image.public_url = blob.public_url
+
         db.session.commit()
 
         # トップページにリダイレクトする
@@ -275,12 +318,23 @@ def save_update(id):
         post.detail = session.get('detail')
         post.category = session.get('category')
 
-        # 'data:image/jpeg;base64,'の部分を取り除く
-        cropped_image = cropped_image.replace("data:image/jpeg;base64,", "")
-        # トリミング済みの画像をデコードする
-        decoded_cropped = base64.b64decode(cropped_image)
+        # データ部分だけを取り出してデコードする
+        image_data = base64.b64decode(cropped_image.split(',')[1])
 
-        image.data = decoded_cropped
+        
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(image.object_name)
+        blob.upload_from_string(image_data)
+
+        # 古い画像の表示を防ぐためにキャッシュを無効にする。
+        blob.cache_control = "no-cache, max-age=0"
+        blob.update()
+
+        blob.make_public()
+
+        image.public_url = blob.public_url
+        
         db.session.commit()
         return redirect(url_for('index'))
 
@@ -289,15 +343,21 @@ def save_update(id):
 @login_required
 def delete(id):
     post = Post.query.get(id)
-    image = Image.query.get(id)
+    image = post.image
+
     current_id = current_user.id
 
     # ログインしているユーザー以外からの削除を防止
     if current_id == post.user_id == image.user_id:
+
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(image.object_name)
+        blob.delete()
+
         db.session.delete(post)
-        db.session.commit()
         db.session.delete(image)
         db.session.commit()
+
         return redirect('/index')
     else:
         flash('invalid delete')
@@ -310,11 +370,11 @@ def outfit():
         user = current_user
         outfit_images = OutfitImage.query.filter_by(user_id=user.id).all()
         # 現在ログインしているユーザー名と画像が持つユーザー名が一致する場合のみ取り出す
-        images = Image.query.all()
-        # 画像データをbase64にエンコードし、画像idをキーとする辞書に格納
-        restored_images_dict = {image.id: base64.b64encode(image.data).decode('utf-8') for image in images}
+        images = Image.query.filter_by(user_id=user.id).all()
+        # image.idをキー、エンコードされた画像データをバリューとする辞書を作成
+        encoded_images_dict = {image.id: base64.b64encode(requests.get(image.public_url).content).decode('utf-8') for image in images}
         #保存したデータを表示する
-        return render_template('outfit.html', outfit_images=outfit_images, restored_images_dict=restored_images_dict)
+        return render_template('outfit.html', outfit_images=outfit_images, encoded_images_dict=encoded_images_dict)
     else:
         user_id = current_user.id
         # 洋服のidの上下セットを登録
@@ -392,7 +452,6 @@ def login():
             return redirect(request.url)
 
 
-
 @app.route('/', methods=['GET'])
 def top():
     if request.method == 'GET':
@@ -403,7 +462,6 @@ def top():
 def logout():
     logout_user()
     return redirect('/')
-
 
 if __name__ == "__main__":
     app.run()

@@ -1,0 +1,4 @@
+*.sqlite
+settings.py
+closet-app-388006-79ea106aacf3.json
+instance/closet.db

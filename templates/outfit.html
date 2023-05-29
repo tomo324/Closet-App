@@ -11,8 +11,8 @@
 <div class="outfit-container">
     {% for image in outfit_images %}
         <div class="outfit">
-            <img class="outfit_images" src="data:image/jpeg;base64,{{ restored_images_dict[image.tops_image_id] }}" alt="tops_image">
-            <img class="outfit_images" src="data:image/jpeg;base64,{{ restored_images_dict[image.bottoms_image_id] }}" alt="bottoms_image">
+            <img class="outfit_images" src="data:image/jpeg;base64,{{ encoded_images_dict[image.tops_image_id] }}" alt="tops_image">
+            <img class="outfit_images" src="data:image/jpeg;base64,{{ encoded_images_dict[image.bottoms_image_id] }}" alt="bottoms_image">
             <a class="outfit-delete" href="outfit/delete/{{ image.id }}" role="button">Delete</a>
             <br>
         </div>
