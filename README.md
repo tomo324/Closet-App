@@ -13,7 +13,7 @@
 ・Python  
 ・JavaScript  
 ・Flask  
-・MySQL 
+・MySQL  
 ・Google Cloud Storage  
 
 ### 制作期間  
