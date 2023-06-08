@@ -49,12 +49,14 @@
     <li>{{ category }}</li>
     <img  id="original-cropped" src="data:image/jpeg;base64,{{ cropped_image }}" alt="cropped_image">
 </ul>
-<form id="submit-image-form" action="/save_update/{{ post.id }}" method="POST">
+<form id="submit-image-form" action="/save_update_cropped/{{ post.id }}" method="POST">
     <input id="image-src-input" type="hidden" name="image-src-input", value="">
     <button class="submit-cropped" type="submit">そのままアップデートする</button>
 </form>
 
-<a href="/save_update/{{ post.id }}" class="submit-rgba" role="button">画像を透過してアップデート(10秒ほどかかります)</a><br>
+<form action="/save_update_rgba/{{ post.id }}" method="POST">
+    <button class="submit-rgba" type="submit">画像を透過してアップデート(10秒ほどかかります)</button>
+</form>
 <p>・アップデートから反映までは少し時間がかかります</p>
 
 {% endif %}

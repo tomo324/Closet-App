@@ -49,12 +49,15 @@
     <li>{{ category }}</li>
     <img  id="original-cropped" src="data:image/jpeg;base64,{{ cropped_image }}" alt="cropped_image">
 </ul>
-<form id="submit-image-form" action="/save" method="POST">
+<form id="submit-image-form" action="/save_cropped" method="POST">
     <input id="image-src-input" type="hidden" name="image-src-input", value="">
     <button class="submit-cropped" type="submit">そのまま保存する</button>
 </form>
 
-<a href="/save" class="submit-rgba" role="button">画像を透過して保存(10秒ほどかかります)</a>
+<form action="/save_rgba" method="POST">
+    <button class="submit-rgba" type="submit">画像を透過して保存(10秒ほどかかります)</button>
+</form>
+
 
 {% endif %}
 <link href="{{ url_for('static', filename='css/cropper.min.css') }}" rel="stylesheet">

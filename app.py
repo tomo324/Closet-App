@@ -151,10 +151,10 @@ def create():
         return render_template('create.html', title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
 
 
-@app.route('/save', methods=['GET', 'POST'])
+@app.route('/save_rgba', methods=['POST'])
 @login_required
-def save():
-    if request.method == 'GET':
+def save_rgba():
+    if request.method == 'POST':
         # トリミングされた画像を透過して保存
         #一時ファイルから画像データを読み込む
         with open(session['image_path'], 'rb') as f:
@@ -177,8 +177,8 @@ def save():
         blob.upload_from_string(rgba_image_bytes)
 
         # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        blob.cache_control = "no-cache, max-age=0"
-        blob.update()
+        # blob.cache_control = "no-cache, max-age=0"
+        # blob.update()
 
         blob.make_public()
 
@@ -194,7 +194,12 @@ def save():
 
         # ホームページにリダイレクトする
         return redirect(url_for('index'))
-    else:
+
+
+@app.route('/save_cropped', methods=['POST'])
+@login_required
+def save_cropped():
+    if request.method == 'POST':
         # トリミングされた画像を透過せずに保存
         cropped_image = request.form.get('image-src-input')
         title = session.get('title')
@@ -214,8 +219,8 @@ def save():
         blob.upload_from_string(image_data)
 
         # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        blob.cache_control = "no-cache, max-age=0"
-        blob.update()
+        # blob.cache_control = "no-cache, max-age=0"
+        # blob.update()
 
         blob.make_public()
 
@@ -277,13 +282,14 @@ def update(id):
         session['category'] = category
 
         return render_template('update.html', post=post, image=image, restored_image=restored_image, title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
-    
-@app.route('/save_update/<int:id>', methods=['GET', 'POST'])
+
+
+@app.route('/save_update_rgba/<int:id>', methods=['POST'])
 @login_required
-def save_update(id):
+def save_update_rgba(id):
     post = Post.query.get(id)
     image = post.image
-    if request.method == 'GET':
+    if request.method == 'POST':
         #一時ファイルから画像データを読み込む
         with open(session['image_path'], 'rb') as f:
             cropped_image = f.read()
@@ -301,18 +307,23 @@ def save_update(id):
         blob.upload_from_string(rgba_image_bytes)
 
         # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        blob.cache_control = "no-cache, max-age=0"
-        blob.update()
+        # blob.cache_control = "no-cache, max-age=0"
+        # blob.update()
 
         blob.make_public()
-
         image.public_url = blob.public_url
-
         db.session.commit()
 
         # トップページにリダイレクトする
         return redirect(url_for('index'))
-    else:
+
+
+@app.route('/save_update_cropped/<int:id>', methods=['POST'])
+@login_required
+def save_update_cropped(id):
+    post = Post.query.get(id)
+    image = post.image
+    if request.method == 'POST':
         cropped_image = request.form.get('image-src-input')
         post.title = session.get('title')
         post.detail = session.get('detail')
@@ -320,7 +331,6 @@ def save_update(id):
 
         # データ部分だけを取り出してデコードする
         image_data = base64.b64decode(cropped_image.split(',')[1])
-
         
         # GCSのバケットにアップロードする
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
@@ -328,11 +338,10 @@ def save_update(id):
         blob.upload_from_string(image_data)
 
         # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        blob.cache_control = "no-cache, max-age=0"
-        blob.update()
+        # blob.cache_control = "no-cache, max-age=0"
+        # blob.update()
 
         blob.make_public()
-
         image.public_url = blob.public_url
         
         db.session.commit()
