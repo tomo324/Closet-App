@@ -14,6 +14,7 @@
 ・JavaScript  
 ・Flask  
 ・MySQL 
+・Google Cloud Storage  
 
 ### 制作期間  
 約1ヶ月（2023年4月~5月）  
