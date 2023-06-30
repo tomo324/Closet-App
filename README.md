@@ -6,6 +6,10 @@
 
 **URL:** [https://tomo324.pythonanywhere.com/](https://tomo324.pythonanywhere.com/)
 
+## ゲストユーザー  
+username: abcdef
+password: 123456  
+
 ## 制作物
 洋服を管理できるWebアプリ。洋服をトップスとボトムスに分けて保管でき、コーディネートの登録もできる。また、画像はトリミングや背景透過を利用して保存できる。
 
