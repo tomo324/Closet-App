@@ -6,7 +6,7 @@
 
 **URL:** [https://tomo324.pythonanywhere.com/](https://tomo324.pythonanywhere.com/)
 
-## ゲストユーザー  
+## テスト用ユーザー  
 username: abcdef  
 password: 123456  
 
