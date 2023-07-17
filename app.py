@@ -8,6 +8,9 @@ import numpy as np
 from flask_migrate import Migrate
 from google.cloud import storage
 from settings import GCS_BUCKET_NAME, SQLALCHEMY_DATABASE_URI
+import PIL.Image
+from io import BytesIO
+import io
 
 
 # アップロードされる拡張子の制限
@@ -16,8 +19,11 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'gif'])
 app = Flask(__name__)
 app.config["DEBUG"] = False
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///closet.db'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+# 本番環境ではこれを使う
+# app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -67,7 +73,6 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "closet-app-388006-79ea106aacf3.j
 
 # Google Cloud Storageクライアントのインスタンス化
 gcs = storage.Client()
-
 
 
 def make_background_transparent(image_data):
@@ -147,15 +152,14 @@ def create():
         session['title'] = title
         session['detail'] = detail
         session['category'] = category
-
         return render_template('create.html', title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
 
 
+# トリミングされた画像を透過して保存
 @app.route('/save_rgba', methods=['POST'])
 @login_required
 def save_rgba():
     if request.method == 'POST':
-        # トリミングされた画像を透過して保存
         #一時ファイルから画像データを読み込む
         with open(session['image_path'], 'rb') as f:
             cropped_image = f.read()
@@ -164,13 +168,26 @@ def save_rgba():
         category = session.get('category')
         user_id = current_user.id
 
-        # 画像を透過する
+        # 画像を透過し、base64エンコードされたデータとして受け取る
         rgba_image = make_background_transparent(cropped_image)
-        rgba_image_bytes = base64.b64decode(rgba_image)
+
+        # Base64からバイトデータに変換
+        rgba_image_data = base64.b64decode(rgba_image)
+
+        # バイトデータからImageオブジェクトに変換
+        rgba_image = PIL.Image.open(io.BytesIO(rgba_image_data))
+
+        # 一時的なバッファに画像を保存
+        buffer = BytesIO()
+        rgba_image.save(buffer, format="WEBP", quality=20, lossless=True)
+
+        # バッファからバイトデータを取得
+        buffer.seek(0)
+        rgba_image_bytes = buffer.read()
 
         # UUIDを生成
-        filename = str(uuid.uuid4())
-        
+        filename = str(uuid.uuid4()) + '.webp'  # 拡張子もwebpに変更
+
         # GCSのバケットにアップロードする
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
@@ -196,11 +213,11 @@ def save_rgba():
         return redirect(url_for('index'))
 
 
+# トリミングされた画像を透過せずに保存
 @app.route('/save_cropped', methods=['POST'])
 @login_required
 def save_cropped():
     if request.method == 'POST':
-        # トリミングされた画像を透過せずに保存
         cropped_image = request.form.get('image-src-input')
         title = session.get('title')
         detail = session.get('detail')
@@ -210,8 +227,19 @@ def save_cropped():
         # データ部分だけを取り出してデコードする
         image_data = base64.b64decode(cropped_image.split(',')[1])
 
+        # PILのImageオブジェクトに変換する
+        image = PIL.Image.open(BytesIO(image_data))
+
+        # 一時的なバッファに画像を保存
+        buffer = BytesIO()
+        image.save(buffer, format="WEBP", quality=20, lossless=True)
+
+        # バッファからバイトデータを取得
+        buffer.seek(0)
+        image_data = buffer.read()
+
         # UUIDを生成
-        filename = str(uuid.uuid4())
+        filename = str(uuid.uuid4()) + '.webp'
         
         # GCSのバケットにアップロードする
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
@@ -473,4 +501,6 @@ def logout():
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
+
+# 最後消す
