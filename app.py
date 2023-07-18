@@ -114,9 +114,9 @@ def index():
         bottoms = Post.query.filter_by(user_id=user.id).filter_by(category='bottoms').all()
         images = Image.query.filter_by(user_id=user.id).all()
         # image.idをキー、エンコードされた画像データをバリューとする辞書を作成
-        encoded_images_dict = {image.id: base64.b64encode(requests.get(image.public_url).content).decode('utf-8') for image in images}
+        images_url_dict = {image.id: image.public_url for image in images}
 
-        return render_template('index.html', encoded_images_dict=encoded_images_dict, tops=tops, bottoms=bottoms, username=username)
+        return render_template('index.html', images_url_dict=images_url_dict, tops=tops, bottoms=bottoms, username=username)
 
 @app.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -204,7 +204,6 @@ def save_rgba():
         db.session.add(new_post)
         db.session.commit()
 
-
         # ホームページにリダイレクトする
         return redirect(url_for('index'))
 
@@ -263,18 +262,18 @@ def save_cropped():
 def read(id):
     post =Post.query.get(id)
     image = post.image
-    restored_image = base64.b64encode(requests.get(image.public_url).content).decode('utf-8')
-    return render_template('detail.html', post=post, image=image, restored_image=restored_image)
+    image_url = image.public_url
+    return render_template('detail.html', post=post, image=image, image_url=image_url)
 
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 @login_required
 def update(id):
     post = Post.query.get(id)
     image = post.image
-    restored_image = base64.b64encode(requests.get(image.public_url).content).decode('utf-8')
+    image_url = image.public_url
     cropped_image = None
     if request.method == 'GET':
-        return render_template('update.html', post=post, image=image, restored_image=restored_image, cropped_image=cropped_image)
+        return render_template('update.html', post=post, image=image, image_url=image_url, cropped_image=cropped_image)
     else:
         title = request.form.get('title')
         detail = request.form.get('detail')
@@ -303,7 +302,7 @@ def update(id):
         session['detail'] = detail
         session['category'] = category
 
-        return render_template('update.html', post=post, image=image, restored_image=restored_image, title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
+        return render_template('update.html', post=post, image=image, image_url=image_url, title=title, detail=detail, category=category, cropped_image=cropped_image_base64)
 
 
 @app.route('/save_update_rgba/<int:id>', methods=['POST'])
@@ -322,7 +321,7 @@ def save_update_rgba(id):
         # 画像を透過する
         rgba_image = make_background_transparent(cropped_image)
 
-                # Base64からバイトデータに変換
+        # Base64からバイトデータに変換
         rgba_image_data = base64.b64decode(rgba_image)
 
         # バイトデータからImageオブジェクトに変換
@@ -336,9 +335,20 @@ def save_update_rgba(id):
         buffer.seek(0)
         rgba_image_bytes = buffer.read()
 
-        # GCSのバケットにアップロードする
+        # 古いバケットを削除
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(image.object_name)
+        try:
+            blob.delete()
+        except Exception as e:
+            flash(f"削除するblobがありませんでした: {e}")
+
+        # uuidを生成
+        filename = str(uuid.uuid4()) + '.webp'
+
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
         blob.upload_from_string(rgba_image_bytes)
 
         blob.make_public()
@@ -376,9 +386,20 @@ def save_update_cropped(id):
         buffer.seek(0)
         image_data = buffer.read()
 
-        # GCSのバケットにアップロードする
+        # 古いバケットを削除
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(image.object_name)
+        try:
+            blob.delete()
+        except Exception as e:
+            flash(f"削除するblobがありませんでした: {e}")
+
+        # uuidを生成
+        filename = str(uuid.uuid4()) + '.webp'
+
+        # GCSのバケットにアップロードする
+        bucket = gcs.get_bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
         blob.upload_from_string(image_data)
 
         blob.make_public()
@@ -401,7 +422,10 @@ def delete(id):
 
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(image.object_name)
-        blob.delete()
+        try:
+            blob.delete()
+        except Exception as e:
+            flash(f"削除するblobがありませんでした: {e}")
 
         db.session.delete(post)
         db.session.delete(image)
@@ -421,9 +445,9 @@ def outfit():
         # 現在ログインしているユーザー名と画像が持つユーザー名が一致する場合のみ取り出す
         images = Image.query.filter_by(user_id=user.id).all()
         # image.idをキー、エンコードされた画像データをバリューとする辞書を作成
-        encoded_images_dict = {image.id: base64.b64encode(requests.get(image.public_url).content).decode('utf-8') for image in images}
+        images_url_dict = {image.id: image.public_url for image in images}
         #保存したデータを表示する
-        return render_template('outfit.html', outfit_images=outfit_images, encoded_images_dict=encoded_images_dict)
+        return render_template('outfit.html', outfit_images=outfit_images, images_url_dict=images_url_dict)
     else:
         user_id = current_user.id
         # 洋服のidの上下セットを登録

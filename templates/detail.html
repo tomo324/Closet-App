@@ -14,7 +14,7 @@
         <p>{{ post.detail }}</p>
         <p>Category: {{ post.category }}</p>
         <div class="image-button-container">
-            <img class="detail-image" src="data:image/jpeg;base64,{{ restored_image }}" alt="{{ post.category }} data">
+            <img class="detail-image" src="{{ image_url }}" alt="{{ post.category }} data">
             <a class="detail-update" href="/update/{{ post.id }}" role="button">Update</a>
         </div>
     </div>

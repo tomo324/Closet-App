@@ -32,7 +32,7 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <div id="tops">
-                        <img  class="clothes-images" src="data:image/jpeg;base64,{{ encoded_images_dict[post.image.id] }}" alt="{{ post.image.id }}">
+                        <img  class="clothes-images" src="{{ images_url_dict[post.image.id] }}" alt="{{ post.image.id }}">
                         <br>
                         <a class="btn-detail" href="detail/{{ post.id }}" role="button">Detail</a>
                         <a class="btn-update" href="update/{{ post.id }}" role="button">Update</a>
@@ -50,7 +50,7 @@
                 <div class="item">
                     <p>Title: {{ post.title }}</p>
                     <div id="bottoms">
-                        <img class="clothes-images" src="data:image/jpeg;base64,{{ encoded_images_dict[post.image.id] }}" alt="{{ post.image.id }}">
+                        <img class="clothes-images" src="{{ images_url_dict[post.image.id] }}" alt="{{ post.image.id }}">
                         <br>
                         <a class="btn-detail" href="detail/{{ post.id }}" role="button">Detail</a>
                         <a class="btn-update" href="update/{{ post.id }}" role="button">Update</a>
