@@ -179,7 +179,7 @@ def save_rgba():
 
         # 一時的なバッファに画像を保存
         buffer = BytesIO()
-        rgba_image.save(buffer, format="WEBP", quality=20, lossless=True)
+        rgba_image.save(buffer, format="WEBP", quality=10, lossless=False)
 
         # バッファからバイトデータを取得
         buffer.seek(0)
@@ -192,10 +192,6 @@ def save_rgba():
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         blob.upload_from_string(rgba_image_bytes)
-
-        # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        # blob.cache_control = "no-cache, max-age=0"
-        # blob.update()
 
         blob.make_public()
 
@@ -228,11 +224,13 @@ def save_cropped():
         image_data = base64.b64decode(cropped_image.split(',')[1])
 
         # PILのImageオブジェクトに変換する
-        image = PIL.Image.open(BytesIO(image_data))
+        pil_image = PIL.Image.open(BytesIO(image_data))
 
         # 一時的なバッファに画像を保存
         buffer = BytesIO()
-        image.save(buffer, format="WEBP", quality=20, lossless=True)
+
+        # フォーマットをWebPに統一し、画質を下げる
+        pil_image.save(buffer, format="WEBP", quality=10, lossless=False)
 
         # バッファからバイトデータを取得
         buffer.seek(0)
@@ -245,10 +243,6 @@ def save_cropped():
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         blob.upload_from_string(image_data)
-
-        # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        # blob.cache_control = "no-cache, max-age=0"
-        # blob.update()
 
         blob.make_public()
 
@@ -327,16 +321,25 @@ def save_update_rgba(id):
 
         # 画像を透過する
         rgba_image = make_background_transparent(cropped_image)
-        rgba_image_bytes = base64.b64decode(rgba_image)
+
+                # Base64からバイトデータに変換
+        rgba_image_data = base64.b64decode(rgba_image)
+
+        # バイトデータからImageオブジェクトに変換
+        rgba_image = PIL.Image.open(io.BytesIO(rgba_image_data))
+
+        # 一時的なバッファに画像を保存
+        buffer = BytesIO()
+        rgba_image.save(buffer, format="WEBP", quality=10, lossless=False)
+
+        # バッファからバイトデータを取得
+        buffer.seek(0)
+        rgba_image_bytes = buffer.read()
 
         # GCSのバケットにアップロードする
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(image.object_name)
         blob.upload_from_string(rgba_image_bytes)
-
-        # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        # blob.cache_control = "no-cache, max-age=0"
-        # blob.update()
 
         blob.make_public()
         image.public_url = blob.public_url
@@ -357,22 +360,31 @@ def save_update_cropped(id):
         post.detail = session.get('detail')
         post.category = session.get('category')
 
-        # データ部分だけを取り出してデコードする
+        # データURIスキームを外してデコードする
         image_data = base64.b64decode(cropped_image.split(',')[1])
         
+        # PILのImageオブジェクトに変換する
+        pil_image = PIL.Image.open(BytesIO(image_data))
+
+        # 一時的なバッファに画像を保存
+        buffer = BytesIO()
+
+        # フォーマットをWebPに統一し、画質を下げる
+        pil_image.save(buffer, format="WEBP", quality=10, lossless=False)
+
+        # バッファからバイトデータを取得
+        buffer.seek(0)
+        image_data = buffer.read()
+
         # GCSのバケットにアップロードする
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(image.object_name)
         blob.upload_from_string(image_data)
 
-        # 古い画像の表示を防ぐためにキャッシュを無効にする。
-        # blob.cache_control = "no-cache, max-age=0"
-        # blob.update()
-
         blob.make_public()
         image.public_url = blob.public_url
-        
         db.session.commit()
+
         return redirect(url_for('index'))
 
 
