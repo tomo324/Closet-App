@@ -28,9 +28,10 @@
         <label for="detail">Detail</label>
         <input type="text" name="detail">
         <input type="file" id="file-input">
-        <select name="category">
-            <option value="tops">Tops</option>
-            <option value="bottoms">Bottoms</option>
+        <select id="category" name="category">
+            <option value="">カテゴリーを選択</option>
+            <option value="tops">トップス</option>
+            <option value="bottoms">ボトムス</option>
         </select><br>
     </div>
     <!-- トリミングする画像が表示される要素 -->
@@ -40,6 +41,16 @@
     </div>
     <button id="apply-crop" type="submit">トリミング</button>
 </form>
+
+<script>
+    document.getElementById('crop-form').addEventListener('submit', function(e) {
+        let category = document.getElementById('category').value;
+        if (category === '') {
+            alert('カテゴリーを選択してください');
+            e.preventDefault();  // 登録を防ぐ
+        }
+    });
+</script>
 
 {% if cropped_image is not none %}
 <p>-------------------------------------------------------------------------------</p>

@@ -19,6 +19,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'gif'])
 app = Flask(__name__)
 app.config["DEBUG"] = False
 
+# ローカルのsqlite
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///closet.db'
 
 # 本番環境ではこれを使う
@@ -70,6 +71,9 @@ class OutfitImage(db.Model):
 
 # サービスアカウントのjsonファイルのパス
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "closet-app-388006-79ea106aacf3.json"
+
+# PythonAnywhereにアップロードするときはパスを以下のようにする
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/tomo324/Closet-App/closet-app-388006-79ea106aacf3.json"
 
 # Google Cloud Storageクライアントのインスタンス化
 gcs = storage.Client()
@@ -459,8 +463,7 @@ def outfit():
             db.session.commit()
             return redirect('/index')
         else:
-            flash('コーデを保存するためにトップスとボトムスの画像をクリックしてください')
-            flash('Click on the tops and bottoms images to save the outfit')
+            flash('コーデを保存するトップにはスとボトムスの画像をクリックしてください')
             return redirect('/index')
 
 @app.route('/outfit/delete/<int:id>')
@@ -537,6 +540,4 @@ def logout():
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run(debug=True)
-
-# 最後消す
+    app.run(debug=True) # ローカル環境のみdebug=True
