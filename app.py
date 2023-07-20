@@ -20,10 +20,10 @@ app = Flask(__name__)
 app.config["DEBUG"] = False
 
 # ローカルのsqlite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///closet.db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///closet.db'
 
 # 本番環境ではこれを使う
-# app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 
 app.config["SQLALCHEMY_POOL_RECYCLE"] = 299
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -69,11 +69,11 @@ class OutfitImage(db.Model):
     bottoms_image_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, nullable=False)
 
-# サービスアカウントのjsonファイルのパス
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "closet-app-388006-79ea106aacf3.json"
+# ローカルのサービスアカウントのjsonファイルのパス
+# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "closet-app-388006-79ea106aacf3.json"
 
 # PythonAnywhereにアップロードするときはパスを以下のようにする
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/tomo324/Closet-App/closet-app-388006-79ea106aacf3.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/tomo324/Closet-App/closet-app-388006-79ea106aacf3.json"
 
 # Google Cloud Storageクライアントのインスタンス化
 gcs = storage.Client()
@@ -172,22 +172,39 @@ def save_rgba():
         category = session.get('category')
         user_id = current_user.id
 
-        # 画像を透過し、base64エンコードされたデータとして受け取る
-        rgba_image = make_background_transparent(cropped_image)
+        # 画像データをデコードして読み込む
+        decoded_img = cv2.imdecode(np.frombuffer(cropped_image, np.uint8), cv2.IMREAD_COLOR)
 
-        # Base64からバイトデータに変換
-        rgba_image_data = base64.b64decode(rgba_image)
+        # 解像度を下げるための新しいサイズを計算
+        height, width = decoded_img.shape[:2]
+        new_width = int(width / 5)
+        new_height = int(height / 5)
+
+
+        # 解像度を下げる
+        resized_image = cv2.resize(decoded_img, (new_width, new_height))
+
+        # 再びバイトデータにエンコードする
+        is_success, im_buf_arr = cv2.imencode(".webp", resized_image)
+        byte_im = im_buf_arr.tobytes()
+
 
         # バイトデータからImageオブジェクトに変換
-        rgba_image = PIL.Image.open(io.BytesIO(rgba_image_data))
+        image_obj = PIL.Image.open(io.BytesIO(byte_im))
 
         # 一時的なバッファに画像を保存
         buffer = BytesIO()
-        rgba_image.save(buffer, format="WEBP", quality=10, lossless=False)
+        image_obj.save(buffer, format="WEBP", quality=10, lossless=False)
 
         # バッファからバイトデータを取得
         buffer.seek(0)
-        rgba_image_bytes = buffer.read()
+        image_bytes = buffer.read()
+
+        # 画像を透過し、base64エンコードされたデータとして受け取る
+        rgba_image_base64 = make_background_transparent(image_bytes)
+        # デコードする
+        rgba_image_bytes = base64.b64decode(rgba_image_base64)
+
 
         # UUIDを生成
         filename = str(uuid.uuid4()) + '.webp'  # 拡張子もwebpに変更
@@ -322,22 +339,37 @@ def save_update_rgba(id):
         post.detail = session.get('detail')
         post.category = session.get('category')
 
-        # 画像を透過する
-        rgba_image = make_background_transparent(cropped_image)
+        # 画像データをデコードして読み込む
+        decoded_img = cv2.imdecode(np.frombuffer(cropped_image, np.uint8), cv2.IMREAD_COLOR)
 
-        # Base64からバイトデータに変換
-        rgba_image_data = base64.b64decode(rgba_image)
+        # 解像度を下げるための新しいサイズを計算
+        height, width = decoded_img.shape[:2]
+        new_width = int(width / 5)
+        new_height = int(height / 5)
+
+        # 解像度を下げる
+        resized_image = cv2.resize(decoded_img, (new_width, new_height))
+
+        # 再びバイトデータにエンコードする
+        is_success, im_buf_arr = cv2.imencode(".webp", resized_image)
+        byte_im = im_buf_arr.tobytes()
+
 
         # バイトデータからImageオブジェクトに変換
-        rgba_image = PIL.Image.open(io.BytesIO(rgba_image_data))
+        image_obj = PIL.Image.open(io.BytesIO(byte_im))
 
         # 一時的なバッファに画像を保存
         buffer = BytesIO()
-        rgba_image.save(buffer, format="WEBP", quality=10, lossless=False)
+        image_obj.save(buffer, format="WEBP", quality=10, lossless=False)
 
         # バッファからバイトデータを取得
         buffer.seek(0)
-        rgba_image_bytes = buffer.read()
+        image_bytes = buffer.read()
+
+        # 画像を透過し、base64エンコードされたデータとして受け取る
+        rgba_image_base64 = make_background_transparent(image_bytes)
+
+        rgba_image_bytes = base64.b64decode(rgba_image_base64)
 
         # 古いバケットを削除
         bucket = gcs.get_bucket(GCS_BUCKET_NAME)
@@ -540,4 +572,4 @@ def logout():
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run(debug=True) # ローカル環境のみdebug=True
+    app.run() # ローカル環境のみdebug=True
