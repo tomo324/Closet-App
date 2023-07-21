@@ -495,7 +495,7 @@ def outfit():
             db.session.commit()
             return redirect('/index')
         else:
-            flash('コーデを保存するトップにはスとボトムスの画像をクリックしてください')
+            flash('コーデを保存するにはトップスとボトムスの画像をクリックしてください')
             return redirect('/index')
 
 @app.route('/outfit/delete/<int:id>')
